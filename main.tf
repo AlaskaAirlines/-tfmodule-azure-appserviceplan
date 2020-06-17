@@ -21,7 +21,7 @@ resource "azurerm_app_service_plan" "sharedplan" {
 
   tags     = data.azurerm_resource_group.rg.tags
   kind     = var.kind
-  reserved = var.kind == "Linux" ? true : var.kind == "Windows" || var.kind == "App" ? false : var.reserved
+  reserved = var.kind == "Linux" || var.kind == "linux" ? true : var.kind == "Windows" || var.kind == "windows" || var.kind == "App" || var.kind == "app" ? false : var.reserved
 
   dynamic "sku" {
     for_each = var.kind == "FunctionApp" ? ["sku"] : []
