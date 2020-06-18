@@ -13,9 +13,10 @@ module "actionGroup" {
 module "basicModule" {
   source = "../../."
 
-  resource-group-name = var.resource-group-name
-  appName             = var.appName
-  environment         = var.environment
-  location            = var.location
-  actionGroupId       = module.actionGroup.action_group_id
+  resource-group-name   = var.resource-group-name
+  appName               = var.appName
+  environment           = var.environment
+  location              = var.location
+  actionGroupId         = module.actionGroup.action_group_id
+  autoScaleNotifyEmails = var.autoScaleNotifyEmails
 }

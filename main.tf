@@ -21,7 +21,7 @@ resource "azurerm_app_service_plan" "sharedplan" {
 
   tags     = data.azurerm_resource_group.rg.tags
   kind     = var.kind
-  reserved = var.kind == "Linux" || var.kind == "linux" ? true : var.kind == "Windows" || var.kind == "windows" || var.kind == "App" || var.kind == "app" ? false : var.reserved
+  reserved = lower(var.kind) == "linux" ? true : lower(var.kind) == "windows" || lower(var.kind) == "app" ? false : var.reserved
 
   dynamic "sku" {
     for_each = var.kind == "FunctionApp" ? ["sku"] : []
@@ -44,7 +44,7 @@ resource "azurerm_app_service_plan" "sharedplan" {
 resource "azurerm_monitor_metric_alert" "planAlert" {
   name                = "${local.baseName}-alerts"
   resource_group_name = data.azurerm_resource_group.rg.name
-  scopes              = "${azurerm_app_service_plan.sharedplan.*.id}"
+  scopes              = azurerm_app_service_plan.sharedplan.*.id
   description         = "Metric alerts for an app service plan"
 
   criteria {
@@ -84,6 +84,53 @@ resource "azurerm_monitor_metric_alert" "planAlert" {
   }
 }
 
-# resource "" "autoscale" {
-#   count = var.kind == "FunctionApp" || var.kind == "elastic" ? 0 : var.count
-# }
+resource "azurerm_monitor_autoscale_setting" "autoscale" {
+  count = var.kind == "FunctionApp" || var.kind == "elastic" ? 0 : var.instanceCount
+
+  name                = "${local.baseName}-${count.index}-${var.location}"
+  resource_group_name = data.azurerm_resource_group.rg.name
+  location            = var.location
+  target_resource_id  = azurerm_app_service_plan.sharedplan[count.index].id
+
+  profile {
+    name = "defaultProfile"
+
+    capacity {
+      default = var.environment == "prod" ? var.prodAutoScaleDefaultCapacity : 1
+      minimum = var.environment == "prod" ? var.prodAutoScaleMinimumCapacity : 1
+      maximum = var.environment == "prod" ? var.prodAutoScaleMaximumCapacity : 10
+    }
+
+    dynamic "rule" {
+      for_each = var.autoScaleRules
+
+      content {
+        metric_trigger {
+          metric_name        = rule.value["metricName"]
+          metric_resource_id = azurerm_app_service_plan.sharedplan[count.index].id
+          time_grain         = rule.value["timeGrain"]
+          statistic          = rule.value["statistic"]
+          time_window        = rule.value["timeWindow"]
+          time_aggregation   = rule.value["timeAggregation"]
+          operator           = rule.value["operator"]
+          threshold          = rule.value["threshold"]
+        }
+
+        scale_action {
+          direction = rule.value["direction"]
+          type      = rule.value["type"]
+          value     = rule.value["value"]
+          cooldown  = rule.value["cooldown"]
+        }
+      }
+    }
+  }
+
+  notification {
+    email {
+      send_to_subscription_administrator    = var.autoScaleNotifySubscriptionAdmins
+      send_to_subscription_co_administrator = var.autoScaleNotifyCoAdmins
+      custom_emails                         = var.autoScaleNotifyEmails
+    }
+  }
+}

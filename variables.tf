@@ -82,3 +82,185 @@ variable "actionGroupId" {
   type        = string
   description = "The ID for the action group to receive notifications of alerts"
 }
+
+variable "prodAutoScaleDefaultCapacity" {
+  type        = number
+  description = "An optional override of the production default capacity for auto scaling for non consumption plans"
+  default     = 2
+}
+
+variable "prodAutoScaleMinimumCapacity" {
+  type        = number
+  description = "An optional override of the production minimum capacity for auto scaling for non consumption plans"
+  default     = 2
+}
+
+variable "prodAutoScaleMaximumCapacity" {
+  type        = number
+  description = "An optional override of the production maximum capacity for auto scaling for non consumption plans"
+  default     = 10
+}
+
+variable "autoScaleNotifySubscriptionAdmins" {
+  type        = bool
+  description = "Turn on or off email notifications to subscription admins when auto scaling triggers"
+  default     = true
+}
+
+variable "autoScaleNotifyCoAdmins" {
+  type        = bool
+  description = "Turn on or off email notifications to co admins when auto scaling triggers"
+  default     = true
+}
+
+variable "autoScaleNotifyEmails" {
+  type        = list(string)
+  description = "A list of emails to notify when auto scaling triggers"
+}
+
+variable "autoScaleRules" {
+  type        = list(map(string))
+  description = "An optional override of the auto scale rules. Use Default for example structure to override."
+  default = [
+    {
+      metricName      = "CpuPercentage",
+      metricNamespace = "",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT5M",
+      timeAggregation = "Average",
+      operator        = "GreaterThan",
+      threshold       = 90
+      direction       = "Increase",
+      type            = "ChangeCount",
+      value           = 2,
+      cooldown        = "PT5M"
+    },
+    {
+      metricName      = "CpuPercentage",
+      metricNamespace = "",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT5M",
+      timeAggregation = "Average",
+      operator        = "GreaterThan",
+      threshold       = 75
+      direction       = "Increase",
+      type            = "ChangeCount",
+      value           = 1,
+      cooldown        = "PT5M"
+    },
+    {
+      metricName      = "CpuPercentage",
+      metricNamespace = "",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT15M",
+      timeAggregation = "Average",
+      operator        = "LessThanOrEqual",
+      threshold       = 50
+      direction       = "Decrease",
+      type            = "ChangeCount",
+      value           = 1,
+      cooldown        = "PT15M"
+    },
+    {
+      metricName      = "HttpQueueLength",
+      metricNamespace = "",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT5M",
+      timeAggregation = "Average",
+      operator        = "GreaterThan",
+      threshold       = 100
+      direction       = "Increase",
+      type            = "ChangeCount",
+      value           = 1,
+      cooldown        = "PT5M"
+    },
+    {
+      metricName      = "HttpQueueLength",
+      metricNamespace = "",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT15M",
+      timeAggregation = "Average",
+      operator        = "LessThanOrEqual",
+      threshold       = 50
+      direction       = "Decrease",
+      type            = "ChangeCount",
+      value           = 1,
+      cooldown        = "PT15M"
+    },
+    {
+      metricName      = "HttpQueueLength",
+      metricNamespace = "",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT5M",
+      timeAggregation = "Average",
+      operator        = "GreaterThan",
+      threshold       = 200
+      direction       = "Increase",
+      type            = "ChangeCount",
+      value           = 2,
+      cooldown        = "PT5M"
+    },
+    {
+      metricName      = "MemoryPercentage",
+      metricNamespace = "",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT5M",
+      timeAggregation = "Average",
+      operator        = "GreaterThan",
+      threshold       = 85
+      direction       = "Increase",
+      type            = "ChangeCount",
+      value           = 1,
+      cooldown        = "PT5M"
+    },
+    {
+      metricName      = "MemoryPercentage",
+      metricNamespace = "",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT15M",
+      timeAggregation = "Average",
+      operator        = "LessThanOrEqual",
+      threshold       = 65
+      direction       = "Decrease",
+      type            = "ChangeCount",
+      value           = 1,
+      cooldown        = "PT15M"
+    },
+    {
+      metricName      = "DiskQueueLength",
+      metricNamespace = "",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT5M",
+      timeAggregation = "Average",
+      operator        = "GreaterThan",
+      threshold       = 100
+      direction       = "Increase",
+      type            = "ChangeCount",
+      value           = 1,
+      cooldown        = "PT5M"
+    },
+    {
+      metricName      = "DiskQueueLength",
+      metricNamespace = "",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT15M",
+      timeAggregation = "Average",
+      operator        = "LessThanOrEqual",
+      threshold       = 50
+      direction       = "Decrease",
+      type            = "ChangeCount",
+      value           = 1,
+      cooldown        = "PT15M"
+    }
+  ]
+}
