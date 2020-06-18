@@ -2,14 +2,16 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/web/mgmt/web"
+	"github.com/Azure/azure-sdk-for-go/services/preview/monitor/mgmt/2018-11-01-preview/insights"
+	"github.com/gruntwork-io/terratest/modules/azure"
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tsalright/terratest/modules/azure"
 )
 
 const (
@@ -22,8 +24,6 @@ const (
 )
 
 type planValidationArgs struct {
-	resGroupName        string
-	subID               string
 	expectedPlanName    string
 	expectedSkuSize     string
 	expectedSkuTier     string
@@ -32,15 +32,34 @@ type planValidationArgs struct {
 	expectedReserved    bool
 }
 
+type metricAlertsValidationArgs struct {
+	expectedRuleName          string
+	expectedMetricNameSpace   string
+	expectedCPUMetricName     string
+	expectedCPUOperator       string
+	expectedCPUAggregation    string
+	expectedCPUThreshold      float64
+	expectedDiskMetricName    string
+	expectedDiskOperator      string
+	expectedDiskAggregation   string
+	expectedDiskThreshold     float64
+	expectedMemoryMetricName  string
+	expectedMemoryOperator    string
+	expectedMemoryAggregation string
+	expectedMemoryThreshold   float64
+	expectedHTTPMetricName    string
+	expectedHTTPOperator      string
+	expectedHTTPAggregation   string
+	expectedHTTPThreshold     float64
+}
+
 func TestTerraformBasicExample(t *testing.T) {
 	// Arrange
 	terraformOptions := &terraform.Options{
 		TerraformDir: "../example/basic/.",
 	}
-	// Leaving subID empty to force it to use the environment variable that Terraform requires to run in CI
+
 	planArgs := planValidationArgs{
-		resGroupName:        "tfmodulevalidation-test-group",
-		subID:               "",
 		expectedPlanName:    "basicPlanSample-test-sharedplan-0-westus2",
 		expectedSkuSize:     "S1",
 		expectedSkuTier:     "Standard",
@@ -49,6 +68,27 @@ func TestTerraformBasicExample(t *testing.T) {
 		expectedReserved:    false,
 	}
 
+	metricAlertsArgs := metricAlertsValidationArgs{
+		expectedCPUAggregation:    "Average",
+		expectedCPUMetricName:     "CpuPercentage",
+		expectedCPUOperator:       "GreaterThan",
+		expectedCPUThreshold:      70,
+		expectedDiskAggregation:   "Average",
+		expectedDiskMetricName:    "DiskQueueLength",
+		expectedDiskOperator:      "GreaterThan",
+		expectedDiskThreshold:     100,
+		expectedHTTPAggregation:   "Average",
+		expectedHTTPMetricName:    "HttpQueueLength",
+		expectedHTTPOperator:      "GreaterThan",
+		expectedHTTPThreshold:     100,
+		expectedMemoryAggregation: "Average",
+		expectedMemoryMetricName:  "MemoryPercentage",
+		expectedMemoryOperator:    "GreaterThan",
+		expectedMemoryThreshold:   90,
+		expectedMetricNameSpace:   "Microsoft.Web/serverfarms",
+		expectedRuleName:          "basicPlanSample-test-sharedplan-alerts",
+	}
+
 	defer terraform.Destroy(t, terraformOptions)
 
 	// Act
@@ -56,6 +96,7 @@ func TestTerraformBasicExample(t *testing.T) {
 
 	// Assert
 	validatePlanContent(t, terraformOptions, &planArgs)
+	validateMetricAlertsContent(t, &metricAlertsArgs)
 }
 
 func TestTerraformConsumptionExample(t *testing.T) {
@@ -63,10 +104,8 @@ func TestTerraformConsumptionExample(t *testing.T) {
 	terraformOptions := &terraform.Options{
 		TerraformDir: "../example/consumption/.",
 	}
-	// Leaving subID empty to force it to use the environment variable that Terraform requires to run in CI
+
 	planArgs := planValidationArgs{
-		resGroupName:        AzureResGroupName,
-		subID:               "",
 		expectedPlanName:    "consumptionPlanSample-test-sharedplan-0-westus2",
 		expectedSkuSize:     "Y1",
 		expectedSkuTier:     "Dynamic",
@@ -75,29 +114,25 @@ func TestTerraformConsumptionExample(t *testing.T) {
 		expectedReserved:    false,
 	}
 
-	defer terraform.Destroy(t, terraformOptions)
-
-	// Act
-	terraform.InitAndApply(t, terraformOptions)
-
-	validatePlanContent(t, terraformOptions, &planArgs)
-}
-
-func TestTerraformLinuxExample(t *testing.T) {
-	// Arrange
-	terraformOptions := &terraform.Options{
-		TerraformDir: "../example/linux/.",
-	}
-	// Leaving subID empty to force it to use the environment variable that Terraform requires to run in CI
-	planArgs := planValidationArgs{
-		resGroupName:        "tfmodulevalidation-test-group",
-		subID:               "",
-		expectedPlanName:    "linuxPlanSample-test-sharedplan-0-westus2",
-		expectedSkuSize:     "S1",
-		expectedSkuTier:     "Standard",
-		expectedSkuCapacity: 1,
-		expectedKind:        "linux",
-		expectedReserved:    true,
+	metricAlertsArgs := metricAlertsValidationArgs{
+		expectedCPUAggregation:    "Average",
+		expectedCPUMetricName:     "CpuPercentage",
+		expectedCPUOperator:       "GreaterThan",
+		expectedCPUThreshold:      70,
+		expectedDiskAggregation:   "Average",
+		expectedDiskMetricName:    "DiskQueueLength",
+		expectedDiskOperator:      "GreaterThan",
+		expectedDiskThreshold:     100,
+		expectedHTTPAggregation:   "Average",
+		expectedHTTPMetricName:    "HttpQueueLength",
+		expectedHTTPOperator:      "GreaterThan",
+		expectedHTTPThreshold:     100,
+		expectedMemoryAggregation: "Average",
+		expectedMemoryMetricName:  "MemoryPercentage",
+		expectedMemoryOperator:    "GreaterThan",
+		expectedMemoryThreshold:   90,
+		expectedMetricNameSpace:   "Microsoft.Web/serverfarms",
+		expectedRuleName:          "consumptionPlanSample-test-sharedplan-alerts",
 	}
 
 	defer terraform.Destroy(t, terraformOptions)
@@ -107,6 +142,53 @@ func TestTerraformLinuxExample(t *testing.T) {
 
 	// Assert
 	validatePlanContent(t, terraformOptions, &planArgs)
+	validateMetricAlertsContent(t, &metricAlertsArgs)
+}
+
+func TestTerraformLinuxExample(t *testing.T) {
+	// Arrange
+	terraformOptions := &terraform.Options{
+		TerraformDir: "../example/linux/.",
+	}
+
+	planArgs := planValidationArgs{
+		expectedPlanName:    "linuxPlanSample-test-sharedplan-0-westus2",
+		expectedSkuSize:     "S1",
+		expectedSkuTier:     "Standard",
+		expectedSkuCapacity: 1,
+		expectedKind:        "linux",
+		expectedReserved:    true,
+	}
+
+	metricAlertsArgs := metricAlertsValidationArgs{
+		expectedCPUAggregation:    "Average",
+		expectedCPUMetricName:     "CpuPercentage",
+		expectedCPUOperator:       "GreaterThan",
+		expectedCPUThreshold:      70,
+		expectedDiskAggregation:   "Average",
+		expectedDiskMetricName:    "DiskQueueLength",
+		expectedDiskOperator:      "GreaterThan",
+		expectedDiskThreshold:     100,
+		expectedHTTPAggregation:   "Average",
+		expectedHTTPMetricName:    "HttpQueueLength",
+		expectedHTTPOperator:      "GreaterThan",
+		expectedHTTPThreshold:     100,
+		expectedMemoryAggregation: "Average",
+		expectedMemoryMetricName:  "MemoryPercentage",
+		expectedMemoryOperator:    "GreaterThan",
+		expectedMemoryThreshold:   90,
+		expectedMetricNameSpace:   "Microsoft.Web/serverfarms",
+		expectedRuleName:          "linuxPlanSample-test-sharedplan-alerts",
+	}
+
+	defer terraform.Destroy(t, terraformOptions)
+
+	// Act
+	terraform.InitAndApply(t, terraformOptions)
+
+	// Assert
+	validatePlanContent(t, terraformOptions, &planArgs)
+	validateMetricAlertsContent(t, &metricAlertsArgs)
 }
 
 func validatePlanContent(t *testing.T, terraformOptions *terraform.Options, args *planValidationArgs) {
@@ -135,6 +217,49 @@ func validatePlanContent(t *testing.T, terraformOptions *terraform.Options, args
 
 	assert.Equal(args.expectedReserved, *plan.Reserved)
 }
+
+func validateMetricAlertsContent(t *testing.T, args *metricAlertsValidationArgs) {
+	fmt.Print("Entering ValidateMetricAlertsContent")
+	assert := assert.New(t)
+
+	metricAlerts := GetMetricAlertsResource(t, args.expectedRuleName)
+
+	fmt.Print("Got the metricsAlertResource")
+	criteriaList, something := metricAlerts.Criteria.AsMetricAlertSingleResourceMultipleMetricCriteria()
+	fmt.Print(something)
+
+	for _, criteria := range *criteriaList.AllOf {
+		fmt.Print(*criteria.MetricName)
+		assert.Equal(args.expectedMetricNameSpace, *criteria.MetricNamespace)
+
+		if args.expectedCPUMetricName == *criteria.MetricName {
+			assert.Equal(args.expectedCPUOperator, string(criteria.Operator))
+			assert.Equal(args.expectedCPUThreshold, *criteria.Threshold)
+			assert.Equal(args.expectedCPUAggregation, criteria.TimeAggregation)
+		}
+
+		if args.expectedDiskMetricName == *criteria.MetricName {
+			assert.Equal(args.expectedDiskOperator, string(criteria.Operator))
+			assert.Equal(args.expectedDiskThreshold, *criteria.Threshold)
+			assert.Equal(args.expectedDiskAggregation, criteria.TimeAggregation)
+		}
+
+		if args.expectedMemoryMetricName == *criteria.MetricName {
+			assert.Equal(args.expectedMemoryOperator, string(criteria.Operator))
+			assert.Equal(args.expectedMemoryThreshold, *criteria.Threshold)
+			assert.Equal(args.expectedMemoryAggregation, criteria.TimeAggregation)
+		}
+
+		if args.expectedHTTPMetricName == *criteria.MetricName {
+			assert.Equal(args.expectedHTTPOperator, string(criteria.Operator))
+			assert.Equal(args.expectedHTTPThreshold, *criteria.Threshold)
+			assert.Equal(args.expectedHTTPAggregation, criteria.TimeAggregation)
+		}
+	}
+}
+
+// Everything below here should be incorporated into TerraTest once they
+// figure out their Azure support model they are working out with Microsoft
 
 func GetAppServicePlan(t *testing.T, planName string) *web.AppServicePlan {
 	plan, err := getAppServicePlanE(planName)
@@ -171,4 +296,40 @@ func getAppServicePlanClient() (*web.AppServicePlansClient, error) {
 	planClient.Authorizer = *authorizer
 
 	return &planClient, nil
+}
+
+func GetMetricAlertsResource(t *testing.T, ruleName string) *insights.MetricAlertResource {
+	metricAlertsResource, err := getMetricAlertsResourceE(ruleName)
+	require.NoError(t, err)
+
+	return metricAlertsResource
+}
+
+func getMetricAlertsResourceE(ruleName string) (*insights.MetricAlertResource, error) {
+	client, err := getMetricAlertsClient()
+	if err != nil {
+		return nil, err
+	}
+
+	rule, err := client.Get(context.Background(), AzureResGroupName, ruleName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rule, nil
+}
+
+func getMetricAlertsClient() (*insights.MetricAlertsClient, error) {
+	subID := os.Getenv(AzureSubscriptionID)
+
+	metricAlertsClient := insights.NewMetricAlertsClient(subID)
+
+	authorizer, err := azure.NewAuthorizer()
+	if err != nil {
+		return nil, err
+	}
+
+	metricAlertsClient.Authorizer = *authorizer
+
+	return &metricAlertsClient, nil
 }

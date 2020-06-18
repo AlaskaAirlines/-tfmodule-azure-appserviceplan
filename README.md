@@ -32,11 +32,16 @@ module "tfmodule-azure-appserviceplan" {
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| actionGroupId | The ID for the action group to receive notifications of alerts | `string` | n/a | yes |
 | appName | The base name of the application used in the naming convention. | `string` | n/a | yes |
+| cpuThreshold | CPU metric alerts for an app service plan | `number` | `70` | no |
+| diskQueueLength | Disk Queue Length metric alerts for an app service plan | `number` | `100` | no |
 | environment | Name of the environment ex (Dev, Test, QA, Prod) | `string` | n/a | yes |
+| httpQueueLength | Http Queue Length metric alerts for an app service plan | `number` | `100` | no |
 | instanceCount | The number of instances you want to create in this location | `number` | `1` | no |
 | kind | The kind of the App Service Plan to create. Possible values are Windows (also available as App), Linux, elastic (for Premium Consumption) and FunctionApp (for a Consumption Plan). Defaults to Windows. Changing this forces a new resource to be created. | `string` | `"Windows"` | no |
 | location | (Required) Specifies the supported Azure location where the resource exists. Changing this forces a new resource to be created. | `string` | n/a | yes |
+| memoryPercentage | Memory metric alerts for an app service plan | `number` | `90` | no |
 | reserved | Is this App Service Plan Reserved. Defaults to false. NOTE: When creating a Linux App Service Plan, the reserved field must be set to true, and when creating a Windows/app App Service Plan the reserved field must be set to false. | `bool` | `false` | no |
 | resource-group-name | Name of the resource group that exists in Azure | `string` | n/a | yes |
 | skuCapacity | (Optional) Specifies the number of workers associated with this App Service Plan. | `number` | `1` | no |

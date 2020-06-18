@@ -41,50 +41,48 @@ resource "azurerm_app_service_plan" "sharedplan" {
   }
 }
 
-# resource "azurerm_monitor_metric_alert" "planAlert" {
-#   count = var.instanceCount
+resource "azurerm_monitor_metric_alert" "planAlert" {
+  name                = "${local.baseName}-alerts"
+  resource_group_name = data.azurerm_resource_group.rg.name
+  scopes              = "${azurerm_app_service_plan.sharedplan.*.id}"
+  description         = "Metric alerts for an app service plan"
 
-#   name                = "${local.baseName}-${count.index}git -alerts"
-#   resource_group_name = data.azurerm_resource_group.rg.name
-#   scopes              = var.appServicePlanIds
-#   description         = "Metric alerts for an app service plan"
+  criteria {
+    metric_namespace = "Microsoft.Web/serverfarms"
+    metric_name      = "CpuPercentage"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = var.cpuThreshold
+  }
 
-#   criteria {
-#     metric_namespace = "Microsoft.Web/serverfarms"
-#     metric_name      = "CpuPercentage"
-#     aggregation      = "Average"
-#     operator         = "GreaterThan"
-#     threshold        = var.cpuThreshold
-#   }
+  criteria {
+    metric_namespace = "Microsoft.Web/serverfarms"
+    metric_name      = "DiskQueueLength"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = var.diskQueueLength
+  }
 
-#   criteria {
-#     metric_namespace = "Microsoft.Web/serverfarms"
-#     metric_name      = "DiskQueueLength"
-#     aggregation      = "Average"
-#     operator         = "GreaterThan"
-#     threshold        = 100
-#   }
+  criteria {
+    metric_namespace = "Microsoft.Web/serverfarms"
+    metric_name      = "MemoryPercentage"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = var.memoryPercentage
+  }
 
-#   criteria {
-#     metric_namespace = "Microsoft.Web/serverfarms"
-#     metric_name      = "MemoryPercentage"
-#     aggregation      = "Average"
-#     operator         = "GreaterThan"
-#     threshold        = 90
-#   }
+  criteria {
+    metric_namespace = "Microsoft.Web/serverfarms"
+    metric_name      = "HttpQueueLength"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = var.httpQueueLength
+  }
 
-#   criteria {
-#     metric_namespace = "Microsoft.Web/serverfarms"
-#     metric_name      = "HttpQueueLength"
-#     aggregation      = "Average"
-#     operator         = "GreaterThan"
-#     threshold        = 100
-#   }
-
-#   action {
-#     action_group_id = var.actionGroupId
-#   }
-# }
+  action {
+    action_group_id = var.actionGroupId
+  }
+}
 
 # resource "" "autoscale" {
 #   count = var.kind == "FunctionApp" || var.kind == "elastic" ? 0 : var.count

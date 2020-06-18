@@ -53,3 +53,32 @@ variable "skuCapacity" {
   description = "(Optional) Specifies the number of workers associated with this App Service Plan."
   default     = 1
 }
+
+variable "cpuThreshold" {
+  type        = number
+  description = "CPU metric alerts for an app service plan"
+  default     = 70
+}
+
+variable "diskQueueLength" {
+  type        = number
+  description = "Disk Queue Length metric alerts for an app service plan"
+  default     = 100
+}
+
+variable "memoryPercentage" {
+  type        = number
+  description = "Memory metric alerts for an app service plan"
+  default     = 90
+}
+
+variable "httpQueueLength" {
+  type        = number
+  description = "Http Queue Length metric alerts for an app service plan"
+  default     = 100
+}
+
+variable "actionGroupId" {
+  type        = string
+  description = "The ID for the action group to receive notifications of alerts"
+}

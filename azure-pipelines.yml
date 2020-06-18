@@ -20,10 +20,22 @@ steps:
     arguments: '-u golang.org/x/lint/golint'
 
 - task: Go@0
-  displayName: 'Go get terratest'
+  displayName: 'Go get terratest/modules/terraform'
   inputs:
     command: 'get'
     arguments: 'github.com/gruntwork-io/terratest/modules/terraform'
+
+- task: Go@0
+  displayName: 'Go get terratest/modules/azure'
+  inputs:
+    command: 'get'
+    arguments: 'github.com/gruntwork-io/terratest/modules/azure'
+
+- task: Go@0
+  displayName: 'Go get azure-sdk-for-go/.../insights'
+  inputs:
+    command: 'get'
+    arguments: 'github.com/Azure/azure-sdk-for-go/profiles/2019-03-01/resources/mgmt/insights'
 
 - task: Go@0
   displayName: 'Go get testify/assert'
@@ -32,12 +44,22 @@ steps:
     arguments: 'github.com/stretchr/testify/assert'
 
 - task: Go@0
+  displayName: 'Go get testify/require'
+  inputs:
+    command: 'get'
+    arguments: 'github.com/stretchr/testify/require'
+
+- task: Go@0
   displayName: 'Go test'
   inputs:
     command: 'test'
     arguments: './test'
   env:
     ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+    AZURE_CLIENT_ID: $(ARM_CLIENT_ID)
+    AZURE_TENANT_ID: $(ARM_TENANT_ID)
+    AZURE_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+    AZURE_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
 
 - task: Npm@1
   displayName: 'Npm Install'
