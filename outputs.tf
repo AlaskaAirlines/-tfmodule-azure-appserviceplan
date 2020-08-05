@@ -1,4 +1,3 @@
-output "output_name" {
-  value       = "value"
-  description = "description for output_name"
+output "sharedplanids" {
+  value = "${azurerm_app_service_plan.sharedplan.*.id}"
 }
