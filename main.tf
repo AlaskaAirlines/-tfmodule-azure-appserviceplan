@@ -1,11 +1,137 @@
-provider "azurerm" {
-  # whilst the `version` attribute is optional, we recommend pinning to a given version of the Provider
-  version = "=2.0.0"
-  features {}
-}
-
 locals {
   baseName = "${var.appName}-${var.environment}-sharedplan"
+  defaultAutoscaleRules = [
+    {
+      metricName      = "CpuPercentage",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT5M",
+      timeAggregation = "Average",
+      operator        = "GreaterThan",
+      threshold       = 90
+      direction       = "Increase",
+      type            = "ChangeCount",
+      value           = 2,
+      cooldown        = "PT5M"
+    },
+    {
+      metricName      = "CpuPercentage",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT5M",
+      timeAggregation = "Average",
+      operator        = "GreaterThan",
+      threshold       = 75
+      direction       = "Increase",
+      type            = "ChangeCount",
+      value           = 1,
+      cooldown        = "PT5M"
+    },
+    {
+      metricName      = "CpuPercentage",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT15M",
+      timeAggregation = "Average",
+      operator        = "LessThanOrEqual",
+      threshold       = 50
+      direction       = "Decrease",
+      type            = "ChangeCount",
+      value           = 1,
+      cooldown        = "PT15M"
+    },
+    {
+      metricName      = "HttpQueueLength",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT5M",
+      timeAggregation = "Average",
+      operator        = "GreaterThan",
+      threshold       = 100
+      direction       = "Increase",
+      type            = "ChangeCount",
+      value           = 1,
+      cooldown        = "PT5M"
+    },
+    {
+      metricName      = "HttpQueueLength",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT15M",
+      timeAggregation = "Average",
+      operator        = "LessThanOrEqual",
+      threshold       = 50
+      direction       = "Decrease",
+      type            = "ChangeCount",
+      value           = 1,
+      cooldown        = "PT15M"
+    },
+    {
+      metricName      = "HttpQueueLength",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT5M",
+      timeAggregation = "Average",
+      operator        = "GreaterThan",
+      threshold       = 200
+      direction       = "Increase",
+      type            = "ChangeCount",
+      value           = 2,
+      cooldown        = "PT5M"
+    },
+    {
+      metricName      = "MemoryPercentage",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT5M",
+      timeAggregation = "Average",
+      operator        = "GreaterThan",
+      threshold       = 85
+      direction       = "Increase",
+      type            = "ChangeCount",
+      value           = 1,
+      cooldown        = "PT5M"
+    },
+    {
+      metricName      = "MemoryPercentage",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT15M",
+      timeAggregation = "Average",
+      operator        = "LessThanOrEqual",
+      threshold       = 65
+      direction       = "Decrease",
+      type            = "ChangeCount",
+      value           = 1,
+      cooldown        = "PT15M"
+    },
+    {
+      metricName      = "DiskQueueLength",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT5M",
+      timeAggregation = "Average",
+      operator        = "GreaterThan",
+      threshold       = 100
+      direction       = "Increase",
+      type            = "ChangeCount",
+      value           = 1,
+      cooldown        = "PT5M"
+    },
+    {
+      metricName      = "DiskQueueLength",
+      timeGrain       = "PT1M",
+      statistic       = "Average",
+      timeWindow      = "PT15M",
+      timeAggregation = "Average",
+      operator        = "LessThanOrEqual",
+      threshold       = 50
+      direction       = "Decrease",
+      type            = "ChangeCount",
+      value           = 1,
+      cooldown        = "PT15M"
+    }
+  ]
 }
 
 data "azurerm_resource_group" "rg" {
@@ -24,7 +150,7 @@ resource "azurerm_app_service_plan" "sharedplan" {
   reserved = lower(var.kind) == "linux" ? true : lower(var.kind) == "windows" || lower(var.kind) == "app" ? false : var.reserved
 
   dynamic "sku" {
-    for_each = var.kind == "FunctionApp" ? ["sku"] : []
+    for_each = lower(var.kind) == "functionapp" ? ["sku"] : []
     content {
       tier = "Dynamic"
       size = "Y1"
@@ -32,7 +158,7 @@ resource "azurerm_app_service_plan" "sharedplan" {
   }
 
   dynamic "sku" {
-    for_each = var.kind != "FunctionApp" ? ["sku"] : []
+    for_each = lower(var.kind) != "functionapp" ? ["sku"] : []
     content {
       tier     = var.skuTier
       size     = var.skuSize
@@ -102,7 +228,7 @@ resource "azurerm_monitor_autoscale_setting" "autoscale" {
     }
 
     dynamic "rule" {
-      for_each = var.autoScaleRules
+      for_each = length(var.autoscaleRules) > 0 ? var.autoscaleRules : local.defaultAutoscaleRules
 
       content {
         metric_trigger {

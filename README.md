@@ -18,15 +18,13 @@ module "tfmodule-azure-appserviceplan" {
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
 
-| Name | Version |
-|------|---------|
-| azurerm | =2.0.0 |
+No requirements.
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| azurerm | =2.0.0 |
+| azurerm | n/a |
 
 ## Inputs
 
@@ -37,7 +35,7 @@ module "tfmodule-azure-appserviceplan" {
 | autoScaleNotifyCoAdmins | Turn on or off email notifications to co admins when auto scaling triggers | `bool` | `true` | no |
 | autoScaleNotifyEmails | A list of emails to notify when auto scaling triggers | `list(string)` | n/a | yes |
 | autoScaleNotifySubscriptionAdmins | Turn on or off email notifications to subscription admins when auto scaling triggers | `bool` | `true` | no |
-| autoScaleRules | An optional override of the auto scale rules. Use Default for example structure to override. | `list(map(string))` | <pre>[<br>  {<br>    "cooldown": "PT5M",<br>    "direction": "Increase",<br>    "metricName": "CpuPercentage",<br>    "metricNamespace": "",<br>    "operator": "GreaterThan",<br>    "statistic": "Average",<br>    "threshold": 90,<br>    "timeAggregation": "Average",<br>    "timeGrain": "PT1M",<br>    "timeWindow": "PT5M",<br>    "type": "ChangeCount",<br>    "value": 2<br>  },<br>  {<br>    "cooldown": "PT5M",<br>    "direction": "Increase",<br>    "metricName": "CpuPercentage",<br>    "metricNamespace": "",<br>    "operator": "GreaterThan",<br>    "statistic": "Average",<br>    "threshold": 75,<br>    "timeAggregation": "Average",<br>    "timeGrain": "PT1M",<br>    "timeWindow": "PT5M",<br>    "type": "ChangeCount",<br>    "value": 1<br>  },<br>  {<br>    "cooldown": "PT15M",<br>    "direction": "Decrease",<br>    "metricName": "CpuPercentage",<br>    "metricNamespace": "",<br>    "operator": "LessThanOrEqual",<br>    "statistic": "Average",<br>    "threshold": 50,<br>    "timeAggregation": "Average",<br>    "timeGrain": "PT1M",<br>    "timeWindow": "PT15M",<br>    "type": "ChangeCount",<br>    "value": 1<br>  },<br>  {<br>    "cooldown": "PT5M",<br>    "direction": "Increase",<br>    "metricName": "HttpQueueLength",<br>    "metricNamespace": "",<br>    "operator": "GreaterThan",<br>    "statistic": "Average",<br>    "threshold": 100,<br>    "timeAggregation": "Average",<br>    "timeGrain": "PT1M",<br>    "timeWindow": "PT5M",<br>    "type": "ChangeCount",<br>    "value": 1<br>  },<br>  {<br>    "cooldown": "PT15M",<br>    "direction": "Decrease",<br>    "metricName": "HttpQueueLength",<br>    "metricNamespace": "",<br>    "operator": "LessThanOrEqual",<br>    "statistic": "Average",<br>    "threshold": 50,<br>    "timeAggregation": "Average",<br>    "timeGrain": "PT1M",<br>    "timeWindow": "PT15M",<br>    "type": "ChangeCount",<br>    "value": 1<br>  },<br>  {<br>    "cooldown": "PT5M",<br>    "direction": "Increase",<br>    "metricName": "HttpQueueLength",<br>    "metricNamespace": "",<br>    "operator": "GreaterThan",<br>    "statistic": "Average",<br>    "threshold": 200,<br>    "timeAggregation": "Average",<br>    "timeGrain": "PT1M",<br>    "timeWindow": "PT5M",<br>    "type": "ChangeCount",<br>    "value": 2<br>  },<br>  {<br>    "cooldown": "PT5M",<br>    "direction": "Increase",<br>    "metricName": "MemoryPercentage",<br>    "metricNamespace": "",<br>    "operator": "GreaterThan",<br>    "statistic": "Average",<br>    "threshold": 85,<br>    "timeAggregation": "Average",<br>    "timeGrain": "PT1M",<br>    "timeWindow": "PT5M",<br>    "type": "ChangeCount",<br>    "value": 1<br>  },<br>  {<br>    "cooldown": "PT15M",<br>    "direction": "Decrease",<br>    "metricName": "MemoryPercentage",<br>    "metricNamespace": "",<br>    "operator": "LessThanOrEqual",<br>    "statistic": "Average",<br>    "threshold": 65,<br>    "timeAggregation": "Average",<br>    "timeGrain": "PT1M",<br>    "timeWindow": "PT15M",<br>    "type": "ChangeCount",<br>    "value": 1<br>  },<br>  {<br>    "cooldown": "PT5M",<br>    "direction": "Increase",<br>    "metricName": "DiskQueueLength",<br>    "metricNamespace": "",<br>    "operator": "GreaterThan",<br>    "statistic": "Average",<br>    "threshold": 100,<br>    "timeAggregation": "Average",<br>    "timeGrain": "PT1M",<br>    "timeWindow": "PT5M",<br>    "type": "ChangeCount",<br>    "value": 1<br>  },<br>  {<br>    "cooldown": "PT15M",<br>    "direction": "Decrease",<br>    "metricName": "DiskQueueLength",<br>    "metricNamespace": "",<br>    "operator": "LessThanOrEqual",<br>    "statistic": "Average",<br>    "threshold": 50,<br>    "timeAggregation": "Average",<br>    "timeGrain": "PT1M",<br>    "timeWindow": "PT15M",<br>    "type": "ChangeCount",<br>    "value": 1<br>  }<br>]</pre> | no |
+| autoscaleRules | An optional override of the auto scale rules. Use Default for example structure to override. | `list(map(string))` | `[]` | no |
 | cpuThreshold | CPU metric alerts for an app service plan | `number` | `70` | no |
 | diskQueueLength | Disk Queue Length metric alerts for an app service plan | `number` | `100` | no |
 | environment | Name of the environment ex (Dev, Test, QA, Prod) | `string` | n/a | yes |

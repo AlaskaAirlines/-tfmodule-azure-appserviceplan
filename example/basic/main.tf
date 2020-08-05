@@ -1,5 +1,11 @@
+provider "azurerm" {
+  # whilst the `version` attribute is optional, we recommend pinning to a given version of the Provider
+  version = "=2.18.0"
+  features {}
+}
+
 module "actionGroup" {
-  source = "github.com/AlaskaAirlines/tfmodule-azure-actiongroup.git?ref=v1.0.1"
+  source = "github.com/AlaskaAirlines/tfmodule-azure-actiongroup.git?ref=v1.0.2"
 
   resource-group-name = var.resource-group-name
   appName             = "emailSample"

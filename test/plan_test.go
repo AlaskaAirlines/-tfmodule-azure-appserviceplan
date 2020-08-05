@@ -53,6 +53,36 @@ type metricAlertsValidationArgs struct {
 	expectedHTTPThreshold     float64
 }
 
+type metricTriggerValidationArgs struct {
+	metricName      string
+	timeGrain       string
+	statistic       string
+	timeWindow      string
+	timeAggregation string
+	operator        string
+	threshold       float64
+}
+
+type scaleActionValidationArgs struct {
+	direction  string
+	actionType string
+	value      string
+	cooldown   string
+}
+
+type ruleValidationArgs struct {
+	metricTrigger *metricTriggerValidationArgs
+	scaleAction   *scaleActionValidationArgs
+}
+
+type profileValidationArgs struct {
+	name            string
+	defaultCapacity string
+	minimumCapacity string
+	maximumCapacity string
+	rules           *[]ruleValidationArgs
+}
+
 func TestTerraformBasicExample(t *testing.T) {
 	// Arrange
 	terraformOptions := &terraform.Options{
@@ -97,6 +127,7 @@ func TestTerraformBasicExample(t *testing.T) {
 	// Assert
 	validatePlanContent(t, terraformOptions, &planArgs)
 	validateMetricAlertsContent(t, &metricAlertsArgs)
+	validateAutoscaleSettingsContent(t, planArgs.expectedPlanName)
 }
 
 func TestTerraformConsumptionExample(t *testing.T) {
@@ -189,6 +220,7 @@ func TestTerraformLinuxExample(t *testing.T) {
 	// Assert
 	validatePlanContent(t, terraformOptions, &planArgs)
 	validateMetricAlertsContent(t, &metricAlertsArgs)
+	validateAutoscaleSettingsContent(t, planArgs.expectedPlanName)
 }
 
 func validatePlanContent(t *testing.T, terraformOptions *terraform.Options, args *planValidationArgs) {
@@ -219,14 +251,11 @@ func validatePlanContent(t *testing.T, terraformOptions *terraform.Options, args
 }
 
 func validateMetricAlertsContent(t *testing.T, args *metricAlertsValidationArgs) {
-	fmt.Print("Entering ValidateMetricAlertsContent")
 	assert := assert.New(t)
 
 	metricAlerts := GetMetricAlertsResource(t, args.expectedRuleName)
 
-	fmt.Print("Got the metricsAlertResource")
-	criteriaList, something := metricAlerts.Criteria.AsMetricAlertSingleResourceMultipleMetricCriteria()
-	fmt.Print(something)
+	criteriaList, _ := metricAlerts.Criteria.AsMetricAlertSingleResourceMultipleMetricCriteria()
 
 	for _, criteria := range *criteriaList.AllOf {
 		fmt.Print(*criteria.MetricName)
@@ -256,6 +285,227 @@ func validateMetricAlertsContent(t *testing.T, args *metricAlertsValidationArgs)
 			assert.Equal(args.expectedHTTPAggregation, criteria.TimeAggregation)
 		}
 	}
+}
+
+func validateAutoscaleSettingsContent(t *testing.T, resourceName string) {
+	assert := assert.New(t)
+
+	autoscaleExpected := buildAutoscaleValidationData()
+	autoscaleSettings := GetAutoscaleSettingsResource(t, resourceName)
+	for _, profile := range *autoscaleSettings.Profiles {
+		assert.Equal(autoscaleExpected.name, *profile.Name)
+		assert.Equal(autoscaleExpected.defaultCapacity, *profile.Capacity.Default)
+		assert.Equal(autoscaleExpected.minimumCapacity, *profile.Capacity.Minimum)
+		assert.Equal(autoscaleExpected.maximumCapacity, *profile.Capacity.Maximum)
+
+		assert.Equal(len(*autoscaleExpected.rules), len(*profile.Rules))
+		for _, rule := range *profile.Rules {
+			assert.True(isRulePresent(&rule, autoscaleExpected.rules))
+		}
+	}
+}
+
+func isRulePresent(rule *insights.ScaleRule, expectedRules *[]ruleValidationArgs) bool {
+	for _, expectedRule := range *expectedRules {
+		if *rule.MetricTrigger.MetricName == expectedRule.metricTrigger.metricName &&
+			*rule.MetricTrigger.TimeGrain == expectedRule.metricTrigger.timeGrain &&
+			string(rule.MetricTrigger.Statistic) == expectedRule.metricTrigger.statistic &&
+			*rule.MetricTrigger.TimeWindow == expectedRule.metricTrigger.timeWindow &&
+			string(rule.MetricTrigger.TimeAggregation) == expectedRule.metricTrigger.timeAggregation &&
+			string(rule.MetricTrigger.Operator) == expectedRule.metricTrigger.operator &&
+			*rule.MetricTrigger.Threshold == expectedRule.metricTrigger.threshold &&
+			string(rule.ScaleAction.Direction) == expectedRule.scaleAction.direction &&
+			string(rule.ScaleAction.Type) == expectedRule.scaleAction.actionType &&
+			*rule.ScaleAction.Value == expectedRule.scaleAction.value &&
+			*rule.ScaleAction.Cooldown == expectedRule.scaleAction.cooldown {
+			return true
+		}
+	}
+	return false
+}
+
+func buildAutoscaleValidationData() *profileValidationArgs {
+	profile := profileValidationArgs{
+		name:            "defaultProfile",
+		defaultCapacity: "1",
+		maximumCapacity: "10",
+		minimumCapacity: "1",
+	}
+
+	profile.rules = &[]ruleValidationArgs{
+		{
+			metricTrigger: &metricTriggerValidationArgs{
+				metricName:      "CpuPercentage",
+				timeGrain:       "PT1M",
+				statistic:       "Average",
+				timeWindow:      "PT5M",
+				timeAggregation: "Average",
+				operator:        "GreaterThan",
+				threshold:       90,
+			},
+			scaleAction: &scaleActionValidationArgs{
+				direction:  "Increase",
+				actionType: "ChangeCount",
+				value:      "2",
+				cooldown:   "PT5M",
+			},
+		},
+		{
+			metricTrigger: &metricTriggerValidationArgs{
+				metricName:      "CpuPercentage",
+				timeGrain:       "PT1M",
+				statistic:       "Average",
+				timeWindow:      "PT5M",
+				timeAggregation: "Average",
+				operator:        "GreaterThan",
+				threshold:       75,
+			},
+			scaleAction: &scaleActionValidationArgs{
+				direction:  "Increase",
+				actionType: "ChangeCount",
+				value:      "1",
+				cooldown:   "PT5M",
+			},
+		},
+		{
+			metricTrigger: &metricTriggerValidationArgs{
+				metricName:      "CpuPercentage",
+				timeGrain:       "PT1M",
+				statistic:       "Average",
+				timeWindow:      "PT15M",
+				timeAggregation: "Average",
+				operator:        "LessThanOrEqual",
+				threshold:       50,
+			},
+			scaleAction: &scaleActionValidationArgs{
+				direction:  "Decrease",
+				actionType: "ChangeCount",
+				value:      "1",
+				cooldown:   "PT15M",
+			},
+		},
+		{
+			metricTrigger: &metricTriggerValidationArgs{
+				metricName:      "HttpQueueLength",
+				timeGrain:       "PT1M",
+				statistic:       "Average",
+				timeWindow:      "PT5M",
+				timeAggregation: "Average",
+				operator:        "GreaterThan",
+				threshold:       100,
+			},
+			scaleAction: &scaleActionValidationArgs{
+				direction:  "Increase",
+				actionType: "ChangeCount",
+				value:      "1",
+				cooldown:   "PT5M",
+			},
+		},
+		{
+			metricTrigger: &metricTriggerValidationArgs{
+				metricName:      "HttpQueueLength",
+				timeGrain:       "PT1M",
+				statistic:       "Average",
+				timeWindow:      "PT15M",
+				timeAggregation: "Average",
+				operator:        "LessThanOrEqual",
+				threshold:       50,
+			},
+			scaleAction: &scaleActionValidationArgs{
+				direction:  "Decrease",
+				actionType: "ChangeCount",
+				value:      "1",
+				cooldown:   "PT15M",
+			},
+		},
+		{
+			metricTrigger: &metricTriggerValidationArgs{
+				metricName:      "HttpQueueLength",
+				timeGrain:       "PT1M",
+				statistic:       "Average",
+				timeWindow:      "PT5M",
+				timeAggregation: "Average",
+				operator:        "GreaterThan",
+				threshold:       200,
+			},
+			scaleAction: &scaleActionValidationArgs{
+				direction:  "Increase",
+				actionType: "ChangeCount",
+				value:      "2",
+				cooldown:   "PT5M",
+			},
+		},
+		{
+			metricTrigger: &metricTriggerValidationArgs{
+				metricName:      "MemoryPercentage",
+				timeGrain:       "PT1M",
+				statistic:       "Average",
+				timeWindow:      "PT5M",
+				timeAggregation: "Average",
+				operator:        "GreaterThan",
+				threshold:       85,
+			},
+			scaleAction: &scaleActionValidationArgs{
+				direction:  "Increase",
+				actionType: "ChangeCount",
+				value:      "1",
+				cooldown:   "PT5M",
+			},
+		},
+		{
+			metricTrigger: &metricTriggerValidationArgs{
+				metricName:      "MemoryPercentage",
+				timeGrain:       "PT1M",
+				statistic:       "Average",
+				timeWindow:      "PT15M",
+				timeAggregation: "Average",
+				operator:        "LessThanOrEqual",
+				threshold:       65,
+			},
+			scaleAction: &scaleActionValidationArgs{
+				direction:  "Decrease",
+				actionType: "ChangeCount",
+				value:      "1",
+				cooldown:   "PT15M",
+			},
+		},
+		{
+			metricTrigger: &metricTriggerValidationArgs{
+				metricName:      "DiskQueueLength",
+				timeGrain:       "PT1M",
+				statistic:       "Average",
+				timeWindow:      "PT5M",
+				timeAggregation: "Average",
+				operator:        "GreaterThan",
+				threshold:       100,
+			},
+			scaleAction: &scaleActionValidationArgs{
+				direction:  "Increase",
+				actionType: "ChangeCount",
+				value:      "1",
+				cooldown:   "PT5M",
+			},
+		},
+		{
+			metricTrigger: &metricTriggerValidationArgs{
+				metricName:      "DiskQueueLength",
+				timeGrain:       "PT1M",
+				statistic:       "Average",
+				timeWindow:      "PT15M",
+				timeAggregation: "Average",
+				operator:        "LessThanOrEqual",
+				threshold:       50,
+			},
+			scaleAction: &scaleActionValidationArgs{
+				direction:  "Decrease",
+				actionType: "ChangeCount",
+				value:      "1",
+				cooldown:   "PT15M",
+			},
+		},
+	}
+
+	return &profile
 }
 
 // Everything below here should be incorporated into TerraTest once they
@@ -332,4 +582,40 @@ func getMetricAlertsClient() (*insights.MetricAlertsClient, error) {
 	metricAlertsClient.Authorizer = *authorizer
 
 	return &metricAlertsClient, nil
+}
+
+func GetAutoscaleSettingsResource(t *testing.T, ruleName string) *insights.AutoscaleSettingResource {
+	autoscaleSettingResource, err := getAutoscaleSettingsResourceE(ruleName)
+	require.NoError(t, err)
+
+	return autoscaleSettingResource
+}
+
+func getAutoscaleSettingsResourceE(ruleName string) (*insights.AutoscaleSettingResource, error) {
+	client, err := getAutoscaleSettingsClient()
+	if err != nil {
+		return nil, err
+	}
+
+	autoscaleSetting, err := client.Get(context.Background(), AzureResGroupName, ruleName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &autoscaleSetting, nil
+}
+
+func getAutoscaleSettingsClient() (*insights.AutoscaleSettingsClient, error) {
+	subID := os.Getenv(AzureSubscriptionID)
+
+	autoscaleSetting := insights.NewAutoscaleSettingsClient(subID)
+
+	authorizer, err := azure.NewAuthorizer()
+	if err != nil {
+		return nil, err
+	}
+
+	autoscaleSetting.Authorizer = *authorizer
+
+	return &autoscaleSetting, nil
 }
